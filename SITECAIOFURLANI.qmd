@@ -1,0 +1,206 @@
+---
+title: "Caio Furlani"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+
+library(WDI)
+library(dplyr)
+library(ggplot2)
+
+options(scipen = 999) # REMOVER A NOT. CIENT.
+# DADOS EM PAINEL
+dadosAccesstoelectricity <- WDI(country = 'all', indicator = 'EG.ELC.ACCS.ZS')
+paises_comparar <- c("BR", "US", "WLD") # BR - Brasil, US - Estados Unidos, WLD - Mundo (World)
+dados_paises <- WDI(country = paises_comparar,
+                    indicator = 'EG.ELC.ACCS.ZS',
+                    start = 2000, end = 2023)
+paises <- c("BR", "US", "WLD", "CN", "IN", "NG")  # Brasil, EUA, Mundo, China, Índia, Nigéria
+dados_multipais <- WDI(
+  country = paises,
+  indicator = "EG.ELC.ACCS.ZS",
+  start = 2000, end = 2023
+)
+
+# Renomear países para nomes legíveis
+dados_multipais$country <- recode(dados_multipais$country,
+                                  "Brazil" = "Brasil",
+                                  "United States" = "Estados Unidos",
+                                  "World" = "Mundo",
+                                  "China" = "China",
+                                  "India" = "Índia",
+                                  "Nigeria" = "Nigéria"
+)
+
+# Cores personalizadas para os países
+cores <- c(
+  "Brasil" = "#E41A1C",
+  "Estados Unidos" = "#377EB8",
+  "Mundo" = "#4DAF4A",
+  "China" = "#984EA3",
+  "Índia" = "#FF7F00",
+  "Nigéria" = "#A65628"
+)
+# CORTE TRANSVERSAL
+dadosAccesstoelectricity2023 <- WDI(country = 'all',
+                                indicator = 'EG.ELC.ACCS.ZS',
+                                start = 2023, end = 2023)
+dadosAccesstoelectricity2023_clean <- dadosAccesstoelectricity2023 %>%
+  filter(!is.na(EG.ELC.ACCS.ZS))
+hist_data <- dadosAccesstoelectricity2023_clean %>%
+  mutate(bin = cut(EG.ELC.ACCS.ZS, breaks = seq(0, 100, by = 5), right = FALSE)) %>%
+  count(bin) %>%
+  mutate(mid = as.numeric(sub("\\[|\\)", "", gsub(",.*", "", bin))) + 2.5)
+
+# Média global
+media_global <- mean(dadosAccesstoelectricity2023_clean$EG.ELC.ACCS.ZS, na.rm = TRUE)
+# SÉRIE TEMPORAL
+dadosAccesstoelectricitybr <- WDI(country = 'BR', indicator = 'EG.ELC.ACCS.ZS')
+
+# Removendo valores NA
+dadosAccesstoelectricitybr <- na.omit(dadosAccesstoelectricitybr)
+
+# Último valor disponível (para anotação)
+ultimo_ano <- max(dadosAccesstoelectricitybr$year, na.rm = TRUE)
+ultimo_valor <- dadosAccesstoelectricitybr %>%
+  filter(year == ultimo_ano) %>%
+  pull(EG.ELC.ACCS.ZS)
+```
+
+## Acasso á eletricidade no Brasil e mundo
+
+Neste trabalho, escolhi analisar a variável **Acesso à Eletricidade**, que representa a porcentagem da população de um país que tem acesso à energia elétrica — um recurso essencial para a qualidade de vida, desenvolvimento econômico e social.
+
+As informações utilizadas foram obtidas por meio da base **WDI (World Development Indicators)**, mantida pelo **Banco Mundial**, que reúne estatísticas econômicas e sociais de diversos países ao redor do mundo.
+
+Essa variável é fundamental porque mostra **o nível de infraestrutura básica disponível para a população** e está diretamente relacionada a indicadores de saúde, educação, produtividade e bem-estar. O acesso à eletricidade é também um dos pilares para alcançar os Objetivos de Desenvolvimento Sustentável (ODS), especialmente o ODS 7 — "Energia Acessível e Limpa".
+
+## Gráfico em Painel – 🌍📈 **Comparação de Acesso à Eletricidade: Brasil, EUA e Mundo (2000–2023)**
+
+O gráfico mostra que, entre 2000 e 2023, o **Brasil** ampliou significativamente o acesso à eletricidade, atingindo quase **100%** da população, especialmente após 2010. Os **Estados Unidos** mantiveram acesso universal ao longo de todo o período. Já a **média mundial** apresentou crescimento constante, passando de cerca de **75% para mais de 90%**, refletindo avanços globais, mas ainda indicando desigualdades entre países. O Brasil destaca-se por acompanhar os países desenvolvidos nesse indicador.
+
+```{r}
+#| label: graficodadosempainel
+#| warning: false
+#| echo: false
+
+ggplot(dados_multipais, aes(x = year, y = EG.ELC.ACCS.ZS, color = country)) +
+  geom_line(size = 1.3) +
+  geom_point(size = 2) +
+  scale_color_manual(values = cores) +
+  labs(
+    title = "Evolução do Acesso à Eletricidade (2000–2023)",
+    subtitle = "Comparação entre Brasil, EUA, Mundo, China, Índia e Nigéria",
+    x = "Ano",
+    y = "Acesso à Eletricidade (%)",
+    color = "País"
+  ) +
+  theme_minimal(base_family = "Helvetica") +
+  theme(
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 10),
+    legend.position = "bottom"
+  )
+
+```
+
+## Grafico de dados de Corte Transversal -**Análise da Distribuição do Acesso à Eletricidade nos Países (2023)**
+
+O histograma mostra a distribuição dos países em relação ao **percentual da população com acesso à eletricidade** no ano de **2023**. Observamos uma **distribuição assimétrica à esquerda (assimetria negativa)**, com a **maior parte dos países concentrados nas faixas de 90% a 100% de cobertura**.
+
+Isso indica que:
+
+-    **A maioria dos países já alcançou um alto nível de acesso à eletricidade**, refletindo os avanços globais em infraestrutura elétrica.
+
+-    Ainda há uma **quantidade menor, mas significativa, de países com cobertura abaixo de 80%**, o que aponta **desigualdades no desenvolvimento energético**, geralmente associadas a países de baixa renda, conflitos armados ou desafios geográficos (como ilhas e regiões remotas).
+
+-    A presença de países nas faixas mais baixas (abaixo de 60%) mostra que, embora o progresso global seja grande, **a universalização do acesso ainda não foi atingida em escala mundial**.
+
+-    Esse tipo de análise é crucial para **identificar prioridades de ação internacional**, especialmente no contexto dos Objetivos de Desenvolvimento Sustentável (ODS), como o ODS 7 – Energia Acessível e Limpa.
+
+```{r}
+#| label: graficocortetransversal
+#| warning: false
+#| echo: false
+
+ggplot() +
+  geom_histogram(data = dadosAccesstoelectricity2023_clean, 
+                 aes(x = EG.ELC.ACCS.ZS), 
+                 binwidth = 5, fill = "#69b3a2", color = "white", alpha = 0.8) +
+  geom_text(data = hist_data, 
+            aes(x = mid, y = n + 1, label = n), 
+            color = "black", size = 4) +
+  geom_density(data = dadosAccesstoelectricity2023_clean, 
+               aes(x = EG.ELC.ACCS.ZS, y = ..count.. * 5), 
+               color = "#1f78b4", size = 1, linetype = "dashed") +
+  geom_vline(xintercept = media_global, 
+             color = "red", linetype = "dotted", size = 1) +
+  annotate("text", x = media_global + 1, y = max(hist_data$n) + 5,
+           label = paste0("Média Global: ", round(media_global, 1), "%"),
+           color = "red", size = 4, hjust = 0) +
+  labs(
+    title = "Distribuição do Acesso à Eletricidade entre os Países",
+    subtitle = "Ano de 2023 — Porcentagem da população com acesso",
+    x = "Acesso à Eletricidade (%)",
+    y = "Número de Países"
+  ) +
+  scale_x_continuous(breaks = seq(0, 100, 10)) +
+  theme_minimal(base_family = "Helvetica") +
+  theme(
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "gray40"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 11)
+  )
+```
+
+## Gráfico de dados de Série Temporal - **Evolução do Acesso à Eletricidade no Brasil (2000–2023)**
+
+Entre os anos de **2000 e 2023**, o Brasil apresentou uma **evolução constante e significativa** no percentual da população com acesso à eletricidade. No início dos anos 2000, o acesso já era elevado, com mais de **90% da população coberta**, refletindo o estágio avançado da infraestrutura energética nacional em comparação com a média global.
+
+Ao longo das duas últimas décadas, o Brasil conseguiu **reduzir desigualdades regionais** e ampliar a cobertura elétrica em áreas rurais e isoladas, alcançando **valores próximos de 100% nos anos mais recentes**. O gráfico mostra uma tendência de crescimento **quase linear**, com **pouca variação negativa**, o que indica **políticas públicas consistentes**, como os programas "Luz para Todos" e investimentos em redes de transmissão.
+
+O último dado disponível, de **2023**, confirma que o Brasil está **muito próximo da universalização do acesso à eletricidade**, o que é um marco importante para o desenvolvimento econômico e social.
+
+```{r}
+#| label: graficoserietemporal
+#| warning: false
+#| echo: false
+
+ggplot(dadosAccesstoelectricitybr, 
+                                            aes(x = year, y = EG.ELC.ACCS.ZS)) +
+  geom_area(fill = "#D6EAF8", alpha = 0.5) +  # área sob a curva
+  geom_line(color = "#2980B9", size = 1.4) +  # linha principal
+  geom_point(color = "#1B4F72", size = 2) +   # pontos reais
+  geom_smooth(method = "loess", se = FALSE, linetype = "dotted", color = "gray40") + # tendência
+  
+  # Anotação do último valor
+  geom_text(aes(x = ultimo_ano, y = ultimo_valor, 
+                label = paste0(round(ultimo_valor, 1), "%")), 
+            vjust = -1, hjust = 1.1, size = 4.5, color = "#1B4F72", fontface = "bold") +
+  
+  # Títulos e rótulos
+  labs(
+    title = "📈 Acesso à Eletricidade no Brasil (2000–2023)",
+    subtitle = "Evolução percentual da população com acesso à eletricidade",
+    x = "Ano",
+    y = "População com Acesso à Eletricidade (%)",
+    caption = "Fonte: World Bank (WDI) • Indicador: EG.ELC.ACCS.ZS"
+  ) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  theme_minimal(base_family = "Helvetica") +
+  theme(
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "#7f8c8d"),
+    plot.caption = element_text(size = 9, hjust = 1, color = "gray50"),
+    axis.title = element_text(size = 13),
+    axis.text = element_text(size = 10),
+    panel.grid.minor = element_blank()
+  )
+```
