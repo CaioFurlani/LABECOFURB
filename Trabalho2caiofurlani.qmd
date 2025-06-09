@@ -1,0 +1,70 @@
+---
+title: "Caio Furlani"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+
+library(GetBCBData)
+library(tidyverse)
+library(gganimate)
+library(scales)
+
+# DEFINIR O ID DA SÉRIE
+my.id <- c(reserva_italia = 3907)
+
+# BAIXAR OS DADOS
+df.bcb <- gbcbd_get_series(id = my.id,
+                           first.date = '1986-03-06',
+                           last.date = '2016-07-01',
+                           format.data = 'long',
+                           use.memoise = TRUE,
+                           cache.path = tempdir(),
+                           do.parallel = FALSE)
+```
+
+## 
+
+## 📊 Análise da Variável: Reservas Internacionais da Itália
+
+A variável analisada representa as Reservas Internacionais da Itália, expressas em milhões de dólares americanos (USD). Essa série está disponível no Sistema Gerenciador de Séries Temporais (SGS) do Banco Central do Brasil, com o código 3907, e cobre o período de 1986 até os dias atuais.
+
+O que são reservas internacionais? As reservas internacionais são os ativos financeiros mantidos por um país em moedas estrangeiras, geralmente sob a custódia de seu banco central. Elas são compostas por: Dólares, euros e outras moedas fortes; Títulos do Tesouro dos EUA; Ouro; Direitos Especiais de Saque (do FMI).
+
+Qual a importância dessas reservas? Essas reservas servem como garantia de solvência internacional, permitindo que um país: Pague suas dívidas externas; Intervenha no câmbio, defendendo sua moeda; Inspire confiança em investidores e credores; Responda a choques econômicos, crises cambiais ou quedas nas exportações.
+
+## 📈 Análise Gráfico da reserva Internacional da Italia
+
+Período: 1986 até hoje O gráfico mostra a evolução das reservas internacionais da Itália ao longo de quase 40 anos. Ponto Mínimo: Ano: Provavelmente nos anos 1980 ou 1990. Valor: Baixo comparado ao atual — sinal de menor integração internacional ou crises econômicas da época. Ponto Máximo: Ano: Após os anos 2000. Valor: Muito mais alto — isso pode indicar estabilidade econômica, aumento das exportações ou políticas conservadoras do Banco da Itália.
+
+Conclusão A análise da variável mostra que as reservas internacionais da Itália aumentaram de forma significativa nas últimas décadas, o que é geralmente um bom sinal de solidez econômica e capacidade de enfrentar crises externas. O gráfico também evidencia os períodos de instabilidade ou recuperação, refletindo a complexidade da economia global e europeia.
+
+```{r}
+#| label: graficodadosempainel
+#| warning: false
+#| echo: false
+
+ggplot(df.bcb, aes(x = ref.date, y = value)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "darkblue", size = 2) +
+  labs(
+    title = "Reservas Internacionais da Itália",
+    subtitle = 'Data: {frame_along}',
+    x = "Ano",
+    y = "Valor (milhões USD)"
+  ) +
+  scale_y_continuous(labels = label_comma()) +
+  theme_minimal(base_family = "Helvetica") +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 14, hjust = 0.5),
+    axis.title = element_text(size = 13),
+    axis.text = element_text(size = 10)
+  ) +
+  transition_reveal(ref.date)
+```
+
+## 
